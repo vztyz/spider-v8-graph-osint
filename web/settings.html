@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spider V8 - Web Settings</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <style>
+        .split-layout { display: flex; gap: 20px; height: calc(100vh - 100px); }
+        .left-col { width: 300px; display: flex; flex-direction: column; gap: 15px; }
+        .right-col { flex-grow: 1; overflow-y: auto; padding-right: 10px; }
+        .profile-list { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+        .profile-item { padding: 10px 15px; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; transition: 0.2s; border-left: 3px solid transparent; }
+        .profile-item:hover { background: rgba(255,255,255,0.1); }
+        .profile-item.active { background: rgba(77,166,255,0.15); border-left-color: #4da6ff; font-weight: bold;}
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 12px; color: #a8b8d0; }
+        .form-group input, .form-group select { width: 100%; box-sizing: border-box; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; }
+        #import-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #1e2738; padding: 25px; border-radius: 12px; width: 450px; border: 1px solid rgba(255,255,255,0.1);}
+    </style>
+</head>
+<body>
+    <div id="sidebar-nav" class="glass">
+        <h2 style="color: #4da6ff; text-align: center; margin-bottom: 30px;">🕷️ SPIDER V8<br><span style="font-size: 12px; color: #a8b8d0;">Web Edition</span></h2>
+        <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+        <a href="keywords.html" class="nav-item">🔑 Keywords</a>
+        <a href="sniper.html" class="nav-item">🎯 Google Sniper</a>
+        <a href="settings.html" class="nav-item active">⚙️ Settings</a>
+        <a href="index.html" class="nav-item">🔗 Graph AI View</a>
+        <a href="wizard.html" class="nav-item" style="color: #a78bfa; font-weight: bold; margin-top: 20px;">🪄 Smart Wizard</a>
+    </div>
+    <div id="main-content">
+        <div class="header-row"><h1>Settings & Accounts</h1></div>
+        <div class="split-layout">
+            <div class="left-col">
+                <div class="glass panel" style="flex-grow: 1; display: flex; flex-direction: column;">
+                    <h3>Accounts</h3>
+                    <div class="profile-list" id="profile-list"></div>
+                    <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
+                        <button class="glass-btn primary" onclick="showNewProfile()">+ Create Blank</button>
+                        <button class="glass-btn secondary" onclick="showImportModal()">⚡ Import .session</button>
+                    </div>
+                </div>
+            </div>
+            <div class="right-col">
+                <div class="glass panel" style="margin-bottom: 20px;">
+                    <h3 style="color: #10b981;">Global Spider Settings</h3>
+                    <div class="grid-3">
+                        <div class="form-group"><label>Min Subscribers</label><input type="number" id="glob-min-subs" class="search-input"></div>
+                        <div class="form-group"><label>Max Depth (posts)</label><input type="number" id="glob-max-depth" class="search-input"></div>
+                        <div class="form-group"><label>Delay (sec)</label><input type="number" id="glob-delay" class="search-input"></div>
+                    </div>
+                    <button class="glass-btn primary" onclick="saveGlobalSettings()">Save Filters</button>
+                </div>
+
+                <div class="glass panel" style="margin-bottom: 20px;">
+                    <h3 style="color: #a78bfa;">🔥 AI, LeadGen & Funnel Setup</h3>
+                    
+                    <!-- Ключ Gemini API -->
+                    <div class="form-group">
+                        <label style="color: #10b981; font-weight: bold;">🔑 Gemini API Key</label>
+                        <input type="password" id="glob-gemini-key" class="search-input" placeholder="Вставь ключ AIzaSy... сюда">
+                    </div>
+
+                    <!-- Настройки прокси для обхода блокировок Gemini -->
+                    <div class="form-group" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                        <label style="color: #4da6ff; font-weight: bold;">🌐 Прокси для обхода блокировки Gemini (Только HTTP IPv4)</label>
+                        <p style="font-size: 11px; color: #a8b8d0; margin-top: 0; margin-bottom: 10px;">Введи зарубежный прокси, чтобы ИИ работал (Google блокирует РФ).</p>
+                        <div class="grid-2" style="margin-top: 5px;">
+                            <input type="text" id="glob-gemini-proxy-ip" class="search-input" placeholder="IP (например: 142.250.18.1)">
+                            <input type="text" id="glob-gemini-proxy-port" class="search-input" placeholder="Порт (например: 8080)">
+                        </div>
+                        <div class="grid-2" style="margin-top: 10px;">
+                            <input type="text" id="glob-gemini-proxy-user" class="search-input" placeholder="Логин (если есть)">
+                            <input type="password" id="glob-gemini-proxy-pass" class="search-input" placeholder="Пароль (если есть)">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                        <label>AI Commenting Prompt (Tone of Voice)</label>
+                        <textarea id="glob-comment-prompt" class="search-input" style="height: 60px; resize: none; font-size: 11px;" placeholder="System prompt for Gemini..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Funnel Bio Template (Will be appended with Invite Link)</label>
+                        <input type="text" id="glob-funnel-bio" class="search-input" placeholder="e.g. My private signals here:">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Funnel Channel Post (Offer Text)</label>
+                        <textarea id="glob-funnel-post" class="search-input" style="height: 60px; resize: none; font-size: 11px;" placeholder="Text for the private channel..."></textarea>
+                    </div>
+                    
+                    <button class="glass-btn ai-btn" onclick="saveGlobalSettings()">Save AI & LeadGen Setup</button>
+                </div>
+
+                <div class="glass panel" id="profile-editor" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 15px;">
+                        <h3 id="editor-title" style="margin:0; color: #4da6ff;">Editing Profile</h3>
+                        <button class="glass-btn" style="background:#ef4444;" onclick="deleteCurrentProfile()">Delete</button>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group"><label>API ID</label><input type="text" id="prof-api-id" class="search-input"></div>
+                        <div class="form-group"><label>API Hash</label><input type="text" id="prof-api-hash" class="search-input"></div>
+                    </div>
+                    <div class="form-group" style="margin-top:10px;">
+                        <label>Proxy Type</label>
+                        <select id="prof-proxy-type" class="search-input">
+                            <option value="None">None</option>
+                            <option value="SOCKS5">SOCKS5</option>
+                            <option value="HTTP Proxy">HTTP Proxy</option>
+                        </select>
+                    </div>
+                    <div class="grid-3">
+                        <div class="form-group"><label>Address (IP:Port)</label><input type="text" id="prof-proxy-addr" class="search-input" placeholder="127.0.0.1:1080"></div>
+                        <div class="form-group"><label>Username</label><input type="text" id="prof-proxy-user" class="search-input"></div>
+                        <div class="form-group"><label>Password</label><input type="password" id="prof-proxy-pass" class="search-input"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Initial Seed Channel</label>
+                        <input type="text" id="prof-seed" class="search-input" value="@ege_math_100">
+                    </div>
+                    <button class="glass-btn primary" style="margin-top:10px;" onclick="saveCurrentProfile()">Save Account Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="import-modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:#4da6ff;">⚡ Import Account</h3>
+            <div class="form-group"><label>Profile Name</label><input type="text" id="imp-name" class="search-input"></div>
+            <div class="form-group"><label>Select .session or .zip (tdata)</label><input type="file" id="imp-file" accept=".session,.zip" style="color: #fff;"></div>
+            <div class="grid-2">
+                <div class="form-group"><label>API ID</label><input type="text" id="imp-id" class="search-input"></div>
+                <div class="form-group"><label>API Hash</label><input type="text" id="imp-hash" class="search-input"></div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button class="glass-btn secondary" onclick="document.getElementById('import-modal').style.display='none'">Cancel</button>
+                <button class="glass-btn primary" onclick="submitImport()">Upload & Import</button>
+            </div>
+        </div>
+    </div>
+    <script src="settings.js"></script>
+</body>
+</html>

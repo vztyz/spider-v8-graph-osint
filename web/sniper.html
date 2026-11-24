@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spider V8 - Google Sniper</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <div id="sidebar-nav" class="glass">
+        <h2 style="color: #4da6ff; text-align: center; margin-bottom: 30px;">🕷️ SPIDER V8<br><span style="font-size: 12px; color: #a8b8d0;">Web Edition</span></h2>
+        <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+        <a href="keywords.html" class="nav-item">🔑 Keywords</a>
+        <a href="sniper.html" class="nav-item active">🎯 Google Sniper</a>
+        <a href="settings.html" class="nav-item">⚙️ Settings</a>
+        <a href="index.html" class="nav-item">🔗 Graph AI View</a>
+        <a href="wizard.html" class="nav-item" style="color: #a78bfa; font-weight: bold; margin-top: 20px;">🪄 Smart Wizard</a>
+    </div>
+    <div id="main-content">
+        <h1>Google Sniper</h1>
+        <p style="color: #a8b8d0; margin-top: -10px; margin-bottom: 20px;">External Telegram link scraping via Selenium</p>
+        <div style="display: flex; gap: 20px; height: calc(100vh - 120px);">
+            <div class="glass panel" style="width: 350px; display: flex; flex-direction: column;">
+                <h3 style="color: #4da6ff;">Queries Builder</h3>
+                <textarea id="queries-input" class="search-input" style="height: 200px; resize: none; margin-bottom: 15px;" placeholder="Enter Google Dorks here (one per line)..."></textarea>
+                <button class="glass-btn primary" id="btn-start-sniper">🚀 Start Google Scraping</button>
+                <button class="glass-btn secondary" id="btn-stop-sniper" style="margin-top: 10px;" disabled>🛑 Stop Scraper</button>
+            </div>
+            <div class="glass panel" style="flex-grow: 1; display: flex; flex-direction: column;">
+                <h3>Sniper Live Logs</h3>
+                <div id="live-logs" class="terminal-log" style="max-height: none;">Ready...</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const btnStart = document.getElementById('btn-start-sniper');
+        const btnStop = document.getElementById('btn-stop-sniper');
+        const logsContainer = document.getElementById('live-logs');
+        function appendLog(text) {
+            if (logsContainer.innerText === "Ready...") logsContainer.innerHTML = "";
+            const div = document.createElement('div');
+            if (text.includes("❌")) div.style.color = "#ef4444";
+            else if (text.includes("✅")) div.style.color = "#10b981";
+            else if (text.includes("🎯")) div.style.color = "#4da6ff";
+            div.innerText = text;
+            logsContainer.prepend(div);
+        }
+        function connectWebSocket() {
+            const ws = new WebSocket(`ws://${window.location.host}/ws`);
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                if (msg.type === "log" && (msg.profile === "Google" || msg.profile === "Checker")) appendLog(msg.message);
+            };
+            ws.onclose = () => setTimeout(connectWebSocket, 5000); 
+        }
+        btnStart.addEventListener('click', async () => {
+            const text = document.getElementById('queries-input').value;
+            const queries = text.split('\n').map(q => q.trim()).filter(q => q.length > 0);
+            if(queries.length === 0) return;
+            btnStart.disabled = true; btnStop.disabled = false;
+            appendLog("🚀 Starting Chrome Driver...");
+            await fetch('/api/sniper/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ queries: queries }) });
+        });
+        btnStop.addEventListener('click', async () => {
+            btnStart.disabled = false; btnStop.disabled = true;
+            appendLog("🛑 Sending stop signal...");
+            await fetch('/api/sniper/stop', { method: 'POST' });
+        });
+        connectWebSocket();
+    </script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spider V8 - Smart Wizard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <style>
+        .wizard-container { display: flex; flex-direction: column; max-width: 800px; margin: 0 auto; gap: 20px; }
+        .step-indicator { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .step-box { flex: 1; text-align: center; padding: 10px; background: rgba(255,255,255,0.05); border-bottom: 3px solid #333; color: #666; transition: 0.3s; font-weight: bold; cursor: pointer; }
+        .step-box:hover { background: rgba(255,255,255,0.1); color: #a8b8d0; }
+        .step-box.active { border-bottom-color: #a78bfa; color: #fff; background: rgba(167,139,250,0.1); }
+        .step-box.completed { border-bottom-color: #10b981; color: #10b981; }
+        .step-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .step-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .wiz-card { background: rgba(15, 19, 26, 0.9); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
+        .inline-form { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 15px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;}
+        .checklist-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 14px; }
+        .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        input:focus, select:focus, textarea:focus { border-color: #a78bfa !important; box-shadow: 0 0 5px rgba(167,139,250,0.3); outline: none;}
+        
+        .dimmed { opacity: 0.3; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="sidebar-nav" class="glass">
+        <h2 style="color: #4da6ff; text-align: center; margin-bottom: 30px;">🕷️ SPIDER V8<br><span style="font-size: 12px; color: #a8b8d0;">Web Edition</span></h2>
+        <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+        <a href="keywords.html" class="nav-item">🔑 Keywords</a>
+        <a href="sniper.html" class="nav-item">🎯 Google Sniper</a>
+        <a href="settings.html" class="nav-item">⚙️ Settings</a>
+        <a href="index.html" class="nav-item">🔗 Graph AI View</a>
+        <a href="wizard.html" class="nav-item active" style="color: #a78bfa; font-weight: bold; margin-top: 20px;">🪄 Smart Wizard</a>
+    </div>
+    
+    <div id="main-content">
+        <div class="header-row" style="justify-content: center; margin-bottom: 10px;"><h1 style="color: #a78bfa;">🪄 Smart Wizard (Авто-запуск)</h1></div>
+
+        <div class="wizard-container">
+            <div class="step-indicator">
+                <div class="step-box active" id="ind-1" onclick="setStep(1)">1. База ЦА</div>
+                <div class="step-box" id="ind-2" onclick="setStep(2)">2. Аккаунт & Прокси</div>
+                <div class="step-box" id="ind-3" onclick="setStep(3)">3. Воронка & ИИ</div>
+                <div class="step-box" id="ind-4" onclick="setStep(4)">4. Запуск</div>
+            </div>
+
+            <!-- ШАГ 1 -->
+            <div class="step-content active" id="step-1">
+                <div class="wiz-card">
+                    <h3>Кому мы будем продавать?</h3>
+                    <p style="font-size: 13px; color: #a8b8d0;">Введи нишу. ИИ найдет релевантные каналы с открытыми комментами.</p>
+                    <input type="text" id="wiz-niche" class="search-input" style="width: 100%; font-size: 16px; padding: 12px; box-sizing: border-box;" placeholder="Например: Психолог, крипто...">
+                    <button class="glass-btn ai-btn" id="btn-analyze" style="width: 100%; margin-top: 15px; padding: 12px;">🧠 Подобрать базу аудитории</button>
+                    <div id="wiz-ai-result" style="display: none; margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px;"></div>
+                </div>
+                <div class="nav-buttons"><div></div><button class="glass-btn primary" onclick="setStep(2)">Далее ➔</button></div>
+            </div>
+
+            <!-- ШАГ 2 -->
+            <div class="step-content" id="step-2">
+                <div class="wiz-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Рабочий Аккаунт (Лидогенератор)</h3>
+                        <button class="glass-btn outline" onclick="toggleImportForm()">+ Добавить .session</button>
+                    </div>
+                    
+                    <div id="inline-import-form" class="inline-form" style="display: none;">
+                        <div class="grid-2">
+                            <div><label style="font-size: 11px; color: #a8b8d0;">1. Файл .session или .zip (с tdata)</label><input type="file" id="imp-file" accept=".session,.zip" style="width:100%; color:#fff; font-size:13px; padding: 8px;"></div>
+                            <div><label style="font-size: 11px; color: #a8b8d0;">Имя профиля</label><input type="text" id="imp-name" class="search-input" style="width:100%; box-sizing:border-box;"></div>
+                        </div>
+                        <div class="grid-2" style="margin-top: 10px;">
+                            <div><label style="font-size: 11px; color: #a8b8d0;">API ID</label><input type="text" id="imp-id" class="search-input" style="width:100%; box-sizing:border-box;"></div>
+                            <div><label style="font-size: 11px; color: #a8b8d0;">API Hash</label><input type="text" id="imp-hash" class="search-input" style="width:100%; box-sizing:border-box;"></div>
+                        </div>
+
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+                            <label style="font-size: 12px; font-weight: bold; color: #4da6ff;">2. Выбор Прокси</label>
+                            <select id="imp-proxy-select" class="search-input" style="width: 100%; margin-top: 5px; margin-bottom: 10px; padding: 10px;"></select>
+
+                            <div id="new-proxy-block" style="display: none; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                                <div class="grid-2">
+                                    <select id="imp-proxy-type" class="search-input" style="width:100%;"><option value="SOCKS5">SOCKS5</option><option value="HTTP Proxy">HTTP Proxy</option></select>
+                                    <input type="text" id="imp-proxy-addr" class="search-input" placeholder="IP:Port или IP:Port:User:Pass" style="width:100%;">
+                                </div>
+                                <div class="grid-2" style="margin-top: 5px;">
+                                    <input type="text" id="imp-proxy-user" class="search-input" placeholder="Логин (если есть)" style="width:100%;">
+                                    <input type="text" id="imp-proxy-pass" class="search-input" placeholder="Пароль (если есть)" style="width:100%;">
+                                </div>
+                                <button class="glass-btn secondary" style="width: 100%; margin-top: 10px;" onclick="testProxyHTTP()">🌐 Тест прокси (HTTP)</button>
+                                <div id="proxy-test-result" style="text-align: center; font-size: 12px; margin-top: 5px;"></div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button class="glass-btn primary" onclick="submitInlineImport()" style="flex-grow: 1; font-size: 14px; padding: 10px;">📥 Импортировать и Выбрать</button>
+                            <button class="glass-btn secondary" onclick="toggleImportForm()">Отмена</button>
+                        </div>
+                    </div>
+
+                    <div id="select-account-area">
+                        <p style="font-size: 13px; color: #a8b8d0; margin-top: 0; margin-bottom: 2px;">Выберите аккаунт для работы (кликните по строке):</p>
+                        <p style="font-size: 11px; color: #666; margin-top: 0;">(Колонки Target и Bridge заполнятся автоматически после первого успешного запуска бота)</p>
+                        <table class="spider-table" id="accounts-table">
+                            <thead>
+                                <tr>
+                                    <th>Имя профиля</th>
+                                    <th>Статус</th>
+                                    <th>Прокси</th>
+                                    <th>Основной (Target)</th>
+                                    <th>Прокладка (Bridge)</th>
+                                    <th style="width: 30px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="accounts-tbody">
+                                <!-- Рендер из JS -->
+                            </tbody>
+                        </table>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button class="glass-btn secondary" id="btn-check-proxy" style="flex-grow: 1; border-color: #f59e0b; color: #f59e0b;" disabled>🛡️ Подключение (Связка)</button>
+                            <button class="glass-btn secondary" id="btn-check-spambot" style="flex-grow: 1; border-color: #ef4444; color: #ef4444;" disabled>🤖 Проверить @spambot</button>
+                        </div>
+                        <div id="proxy-result" style="margin-top: 10px; font-weight: bold; font-size: 13px; text-align: center;"></div>
+                    </div>
+                </div>
+                <div class="nav-buttons"><button class="glass-btn secondary" onclick="setStep(1)">⬅ Назад</button><button class="glass-btn primary" onclick="setStep(3)">Далее ➔</button></div>
+            </div>
+
+            <!-- ШАГ 3 -->
+            <div class="step-content" id="step-3">
+                <div class="wiz-card">
+                    <h3>Настройки Прогрева, Профиля и Воронки</h3>
+                    
+                    <label class="chk-wrapper" style="margin-bottom: 15px; background: rgba(16,185,129,0.1); padding: 12px; border-radius: 8px; border: 1px solid #10b981; color: #10b981; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="wiz-warmed-up" style="transform: scale(1.3);"> 
+                        <span style="font-weight: bold;">Аккаунт УЖЕ оформлен (Пропустить авто-заполнение)</span>
+                    </label>
+
+                    <!-- Блок Разогрева сессии -->
+                    <div style="background: rgba(77, 166, 255, 0.1); border: 1px solid #4da6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <h4 style="margin: 0 0 5px 0; color: #4da6ff;">🚶‍♂️ Разогрев сессии (Pre-Action Jitter)</h4>
+                        </div>
+                        <p style="font-size: 11px; color: #a8b8d0; margin-top: 0; line-height: 1.4;">
+                            <span style="color:#f59e0b; font-weight:bold;">Внимание:</span> Это НЕ глубокий фарминг новорега! 
+                            Это имитация входа живого человека в приложение <b>прямо перед началом рассылки</b>. 
+                            Бот полистает популярные каналы (Дуров, Новости), чтобы показать статус "Онлайн", и только потом пойдет спамить.
+                        </p>
+                        <div style="display: flex; gap: 15px; align-items: center; margin-top: 10px;">
+                            <div>
+                                <label style="font-size: 12px; color: #fff;">Каналов "почитать":</label>
+                                <input type="number" id="wiz-warmup-count" class="search-input" style="width: 80px; padding: 5px;" value="3">
+                            </div>
+                            <div>
+                                <!-- ФИКС: Заменили (сек) на (МИНУТ) -->
+                                <label style="font-size: 12px; color: #10b981; font-weight: bold;">Пауза (в МИНУТАХ): от</label>
+                                <input type="number" id="wiz-warmup-min" class="search-input" style="width: 60px; padding: 5px;" value="3">
+                                <label style="font-size: 12px; color: #fff;">до</label>
+                                <input type="number" id="wiz-warmup-max" class="search-input" style="width: 60px; padding: 5px;" value="7">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Блок Лимитов Спама -->
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #ef4444;">🚨 Безопасность и Лимиты (Важно!)</h4>
+                        <p style="font-size: 11px; color: #a8b8d0; margin-top: 0;">Если аккаунт оставит 50 комментов подряд — это 100% бан. Настраиваем реалистичные интервалы.</p>
+                        <div class="grid-2">
+                            <div>
+                                <label style="font-size: 12px; color: #fff;">Задержка между комментами (минут):</label>
+                                <div style="display: flex; gap: 5px; align-items: center; margin-top: 5px;">
+                                    <input type="number" id="wiz-delay-min" class="search-input" style="width: 60px;" value="5">
+                                    <span style="color: #a8b8d0;">до</span>
+                                    <input type="number" id="wiz-delay-max" class="search-input" style="width: 60px;" value="15">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; color: #fff;">Лимит комментов (в сутки на 1 акк):</label>
+                                <input type="number" id="wiz-daily-limit" class="search-input" style="width: 100%; margin-top: 5px;" value="15">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="funnel-setup-box">
+                        <!-- Настройки Имен -->
+                        <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h4 style="margin: 0; color: #a78bfa;">Легенда аккаунта (Нейро-генерация)</h4>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="glass-btn ai-btn" id="btn-generate-names" style="padding: 4px 10px; font-size: 12px;">🪄 Придумать ИИ</button>
+                                    <button class="glass-btn outline" onclick="document.getElementById('ai-persona-settings').style.display = document.getElementById('ai-persona-settings').style.display === 'none' ? 'block' : 'none'" style="padding: 4px 8px; font-size: 12px; border-color: #a78bfa; color: #a78bfa;" title="Тонкие настройки Персонажа">⚙️</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Настройки Персонажа для ИИ -->
+                            <div id="ai-persona-settings" style="display: none; background: rgba(0,0,0,0.3); border: 1px solid rgba(167, 139, 250, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                <p style="margin: 0 0 10px 0; font-size: 11px; color: #a8b8d0;">Эти данные помогут ИИ создать правильное имя, БИО и офферный пост в едином стиле.</p>
+                                <div class="grid-2">
+                                    <div>
+                                        <label style="font-size: 11px; color: #a78bfa;">Язык генерации:</label>
+                                        <select id="wiz-ai-lang" class="search-input" style="width: 100%; padding: 6px; font-size: 12px;">
+                                            <option value="RU">Русский (RU)</option>
+                                            <option value="EN">English (EN)</option>
+                                            <option value="ES">Spanish (ES)</option>
+                                            <option value="AR">Arabic (AR)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11px; color: #a78bfa;">Пол:</label>
+                                        <select id="wiz-ai-gender" class="search-input" style="width: 100%; padding: 6px; font-size: 12px;">
+                                            <option value="Женский">Женский (Female)</option>
+                                            <option value="Мужской">Мужской (Male)</option>
+                                            <option value="Не важно">Не важно (Any)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="grid-2" style="margin-top: 10px;">
+                                    <div>
+                                        <label style="font-size: 11px; color: #a78bfa;">Возраст (От и До):</label>
+                                        <div style="display: flex; gap: 5px;">
+                                            <input type="number" id="wiz-ai-age-min" class="search-input" style="width: 50%; padding: 6px; font-size: 12px;" value="20">
+                                            <input type="number" id="wiz-ai-age-max" class="search-input" style="width: 50%; padding: 6px; font-size: 12px;" value="25">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11px; color: #a78bfa;">Страна/Город:</label>
+                                        <input type="text" id="wiz-ai-country" class="search-input" style="width: 100%; padding: 6px; font-size: 12px;" placeholder="Дубай, СНГ, США...">
+                                    </div>
+                                </div>
+                                <div class="grid-2" style="margin-top: 10px;">
+                                    <div>
+                                        <label style="font-size: 11px; color: #a78bfa;">Профессия/Роль:</label>
+                                        <input type="text" id="wiz-ai-profession" class="search-input" style="width: 100%; padding: 6px; font-size: 12px;" placeholder="Модель, Инвестор, Мамочка...">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 11px; color: #a78bfa;">Интересы:</label>
+                                        <input type="text" id="wiz-ai-interests" class="search-input" style="width: 100%; padding: 6px; font-size: 12px;" placeholder="Лакшери, авто, крипта...">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid-2">
+                                <div>
+                                    <label style="font-size: 12px; color: #a8b8d0;">Имя аккаунта (First Name):</label>
+                                    <input type="text" id="wiz-first-name" class="search-input" style="width: 100%; box-sizing: border-box;" value="Vlada">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: #a8b8d0;">Фамилия/Приставка (Last Name):</label>
+                                    <input type="text" id="wiz-last-name" class="search-input" style="width: 100%; box-sizing: border-box;" value="Private">
+                                </div>
+                            </div>
+                            <div style="margin-top: 10px;" id="wiz-channel-title-wrapper">
+                                <label style="font-size: 12px; color: #a8b8d0;">Название канала-прокладки (если создается):</label>
+                                <input type="text" id="wiz-channel-title" class="search-input" style="width: 100%; box-sizing: border-box;" value="My Blog">
+                            </div>
+                            <div id="ai-name-suggestions" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:15px;"></div>
+                        </div>
+
+                        <!-- Аватарки и БИО -->
+                        <div class="grid-2">
+                            <div>
+                                <label style="font-size: 12px; color: #a8b8d0;">Аватарка Аккаунта:</label>
+                                <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                    <div id="thumb-acc" style="width: 35px; height: 35px; border-radius: 50%; background: #333; flex-shrink: 0; background-size: cover; background-position: center;"></div>
+                                    <input type="file" id="wiz-acc-avatar" accept="image/*" class="search-input" style="width: 100%; padding: 5px; box-sizing: border-box;">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; color: #a8b8d0;">Текст BIO (до 50 симв.):</label>
+                                <input type="text" id="wiz-bio" class="search-input" style="width: 100%; margin-top: 5px; box-sizing: border-box;" value="Мой блог и услуги">
+                            </div>
+                        </div>
+
+                        <!-- Режим воронки -->
+                        <div style="margin-top: 20px;">
+                            <label style="font-size: 14px; font-weight: bold; color: #fff;">Куда льем трафик?</label>
+                            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                                <label class="chk-wrapper" style="background: rgba(77, 166, 255, 0.1); padding: 12px; border-radius: 8px; border: 1px solid #4da6ff; cursor: pointer; align-items: flex-start;">
+                                    <input type="radio" name="funnel_type" value="direct" checked onchange="toggleFunnelMode()" style="margin-top: 3px; transform: scale(1.2);"> 
+                                    <div>
+                                        <span style="font-weight: bold; color: #4da6ff; font-size: 14px;">Лить на существующий ТГ-канал (Бизнес / Эксперт)</span><br>
+                                        <span style="font-size: 11px; color: #a8b8d0;">Бот только поставит аватарку и вставит ссылку в профиль.</span>
+                                    </div>
+                                </label>
+                                <label class="chk-wrapper" style="background: rgba(167, 139, 250, 0.1); padding: 12px; border-radius: 8px; border: 1px solid #a78bfa; cursor: pointer; align-items: flex-start;">
+                                    <input type="radio" name="funnel_type" value="bridge" onchange="toggleFunnelMode()" style="margin-top: 3px; transform: scale(1.2);"> 
+                                    <div>
+                                        <span style="font-weight: bold; color: #a78bfa; font-size: 14px;">Создать Канал-Прокладку (Арбитраж / OFM)</span><br>
+                                        <span style="font-size: 11px; color: #a8b8d0;">Бот создаст канал, зальет аватарку, напишет оффер.</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="wiz-direct-settings" style="margin-top: 15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                            <label style="font-size: 12px; color: #4da6ff; font-weight: bold;">Ссылка на твой канал:</label>
+                            <input type="text" id="wiz-target-channel" class="search-input" style="width: 100%; box-sizing: border-box; margin-top: 5px;" placeholder="https://t.me/my_expert_channel">
+                        </div>
+
+                        <div id="wiz-bridge-settings" style="display: none; margin-top: 15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                            <label style="font-size: 12px; color: #10b981; font-weight: bold;">Ссылка на MAIN канал (Money-канал):</label>
+                            <input type="text" id="wiz-bridge-main" class="search-input" style="width: 100%; box-sizing: border-box; margin-top: 5px; margin-bottom: 15px;" placeholder="https://t.me/my_vip_onlyfans">
+
+                            <label class="chk-wrapper" style="margin-bottom: 15px; background: rgba(167, 139, 250, 0.1); padding: 12px; border-radius: 8px; border: 1px solid #a78bfa; cursor: pointer; align-items: flex-start; display: flex; gap: 10px;">
+                                <input type="checkbox" id="wiz-bridge-private" style="margin-top: 3px; transform: scale(1.3);" checked> 
+                                <div>
+                                    <span style="font-weight: bold; color: #a78bfa; font-size: 14px;">Создать Приватный канал (Прием по заявкам)</span><br>
+                                    <span style="font-size: 11px; color: #a8b8d0;">Ссылка будет работать через "Запрос на вступление". Мастхев для OFM и Арбитража.</span>
+                                </div>
+                            </label>
+
+                            <div class="grid-2" style="margin-bottom: 15px;">
+                                <div>
+                                    <label style="font-size: 12px; color: #a78bfa; font-weight: bold;">Аватарка Прокладки:</label>
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                        <div id="thumb-chan" style="width: 35px; height: 35px; border-radius: 8px; background: #333; flex-shrink: 0; background-size: cover; background-position: center;"></div>
+                                        <input type="file" id="wiz-chan-avatar" accept="image/*" class="search-input" style="width: 100%; padding: 5px; box-sizing: border-box;">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: #10b981; font-weight: bold;">Картинка для поста (Оффера):</label>
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                        <div id="thumb-post" style="width: 35px; height: 35px; border-radius: 8px; background: #333; flex-shrink: 0; background-size: cover; background-position: center;"></div>
+                                        <input type="file" id="wiz-post-image" accept="image/*" class="search-input" style="width: 100%; padding: 5px; box-sizing: border-box;">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <label style="font-size: 12px; color: #a78bfa; font-weight: bold;">Первый пост в Прокладке (Оффер):</label>
+                            <p style="font-size: 11px; color: #a8b8d0; margin-top: 2px; margin-bottom: 5px;">Используй <span style="color:#fff; font-weight:bold;">{link}</span> чтобы вставить ссылку на Main канал.</p>
+                            <textarea id="wiz-post" class="search-input" style="width: 100%; height: 60px; resize: none; box-sizing: border-box;">🚀 Привет! Жду тебя тут: {link}</textarea>
+                        </div>
+                        
+                        <!-- Промпт и Тест -->
+                        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                                <label style="font-size: 14px; font-weight: bold; color: #10b981;">Системный Промпт для ИИ (Как писать комменты):</label>
+                                <button class="glass-btn outline" id="btn-preview-ai" style="padding: 4px 10px; font-size: 12px; border-color: #10b981; color: #10b981;">🎲 Тест Промпта</button>
+                            </div>
+                            <textarea id="wiz-prompt" class="search-input" style="width: 100%; height: 80px; resize: none; font-size: 12px; box-sizing: border-box; margin-top: 5px;">Напиши интригующий комментарий...</textarea>
+                            <div id="ai-preview-result" style="display: none; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 13px; color: #fff;"></div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="nav-buttons"><button class="glass-btn secondary" onclick="setStep(2)">⬅ Назад</button><button class="glass-btn primary" onclick="saveAndGoToStep4()">Сохранить и Далее ➔</button></div>
+            </div>
+
+            <!-- ШАГ 4 -->
+            <div class="step-content" id="step-4">
+                <div class="wiz-card">
+                    <h3 style="margin-top:0; text-align: center;">Предполетный чек-лист и Распределение</h3>
+                    <div class="checklist-item"><span id="chk-acc-badge" class="status-badge" style="background: rgba(239,68,68,0.2); color: #ef4444;">ОЖИДАНИЕ</span><span id="chk-acc-text">Аккаунт не выбран</span></div>
+                    <div class="checklist-item"><span class="status-badge" style="background: rgba(16,185,129,0.2); color: #10b981;">ОК</span><span id="chk-funnel-text">Воронка будет создана</span></div>
+                    
+                    <div style="margin-top: 15px; background: rgba(77, 166, 255, 0.1); padding: 15px; border-radius: 8px; border: 1px solid #4da6ff;">
+                        <h4 style="margin: 0 0 5px 0; color: #4da6ff;">⚖️ Авто-балансировка нагрузки</h4>
+                        <p style="font-size: 11px; color: #a8b8d0; margin: 0;">Вся найденная база каналов автоматически распределяется между активными аккаунтами. Если ты запустишь несколько профилей из Dashboard, ядро само выдаст каждому уникальные каналы из пула (без пересечений). Здесь ты настраиваешь <b>Мастер-аккаунт</b>.</p>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin-top: 25px;">
+                        <button class="glass-btn secondary" id="btn-launch-prep" style="flex: 1; font-size: 16px; padding: 15px; border-color: #4da6ff; color: #4da6ff;" disabled>
+                            🛠️ ТОЛЬКО ПОДГОТОВКА<br>
+                            <span style="font-size: 11px; font-weight: normal; color: #a8b8d0;">Оформить профиль и прогреть (Без комментинга)</span>
+                        </button>
+                        <button class="glass-btn ai-btn" id="btn-launch-full" style="flex: 1; font-size: 16px; padding: 15px;" disabled>
+                            🔥 БОЕВОЙ ЗАПУСК<br>
+                            <span style="font-size: 11px; font-weight: normal; color: rgba(255,255,255,0.7);">Оформить, Прогреть и начать Лидогенерацию</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- БЛОК РЕЗУЛЬТАТОВ ВОРОНКИ (Появляется после старта) -->
+                <div id="funnel-links-result" class="glass panel" style="display:none; margin-bottom: 20px; border-color: #10b981; flex-direction: column; align-items: center; text-align: center;">
+                    <h3 style="color: #10b981; margin-top: 0; margin-bottom: 5px;">✅ Аккаунт запущен!</h3>
+                    <p style="font-size: 12px; color: #a8b8d0; margin-top: 0;">Если создавалась воронка, ссылки появятся ниже:</p>
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; width: 100%; box-sizing: border-box;">
+                        <a id="res-target-link" href="#" target="_blank" style="color: #4da6ff; font-weight: bold; font-size: 16px; display: none; margin-bottom: 5px;"></a>
+                        <a id="res-bridge-link" href="#" target="_blank" style="color: #a78bfa; font-weight: bold; font-size: 16px; display: none;"></a>
+                    </div>
+                    <!-- Кнопка перезапуска Wizard'а и кнопка Остановки -->
+                    <div style="display: flex; gap: 15px; margin-top: 15px; justify-content: center; width: 100%; flex-wrap: wrap;">
+                        <button class="glass-btn outline" id="btn-wizard-stop" onclick="stopWizardTask()" style="border-color: #ef4444; color: #ef4444; font-size: 14px; padding: 10px 20px;">
+                            🛑 Экстренная остановка
+                        </button>
+                        <button class="glass-btn primary" onclick="resetWizardForNewAccount()" style="font-size: 14px; padding: 10px 20px;">
+                            ➕ Настроить еще один аккаунт
+                        </button>
+                    </div>
+                </div>
+
+                <!-- БЛОК ТЕРМИНАЛА (Вынесен ниже, чтобы оставаться на экране) -->
+                <div class="glass panel" style="display: none; flex-direction: column;" id="wizard-terminal-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin: 0;">Live Logs (Все запущенные аккаунты)</h3>
+                    </div>
+                    <div id="wizard-logs" class="terminal-log" style="height: 300px;"></div>
+                </div>
+
+                <div class="nav-buttons" id="nav-btn-4"><button class="glass-btn secondary" onclick="setStep(3)">⬅ Назад</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно кадрирования -->
+    <div id="crop-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 20, 28, 0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <h3 style="color: #4da6ff; margin-bottom: 15px;">✂️ Обрезка фото (Кадрирование)</h3>
+        <div style="width: 90%; max-width: 500px; height: 50vh; background: #000; border-radius: 8px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+            <img id="crop-image" style="max-width: 100%; display: block;">
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 15px;">
+            <button class="glass-btn secondary" onclick="closeCropModal()">Отмена</button>
+            <button class="glass-btn ai-btn" onclick="applyCrop()" style="padding: 10px 20px; font-size: 16px;">✅ Сохранить</button>
+        </div>
+    </div>
+
+    <script src="wizard.js"></script>
+</body>
+</html>

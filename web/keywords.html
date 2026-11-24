@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spider V8 - Keywords</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <style>
+        .kw-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .tag-badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold;}
+    </style>
+</head>
+<body>
+    <div id="sidebar-nav" class="glass">
+        <h2 style="color: #4da6ff; text-align: center; margin-bottom: 30px;">🕷️ SPIDER V8<br><span style="font-size: 12px; color: #a8b8d0;">Web Edition</span></h2>
+        <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+        <a href="keywords.html" class="nav-item active">🔑 Keywords</a>
+        <a href="sniper.html" class="nav-item">🎯 Google Sniper</a>
+        <a href="settings.html" class="nav-item">⚙️ Settings</a>
+        <a href="index.html" class="nav-item">🔗 Graph AI View</a>
+        <a href="wizard.html" class="nav-item" style="color: #a78bfa; font-weight: bold; margin-top: 20px;">🪄 Smart Wizard</a>
+    </div>
+    <div id="main-content">
+        <h1>Keywords & Triggers</h1>
+        <div class="glass panel" style="margin-bottom: 20px;">
+            <div style="display: flex; gap: 15px;">
+                <input type="text" id="kw-input" class="search-input" style="flex-grow: 1;" placeholder="Paste words separated by comma">
+                <select id="kw-type" class="search-input" style="width: 200px;">
+                    <option value="whitelist">Whitelist</option>
+                    <option value="blacklist">Blacklist</option>
+                    <option value="comment_trigger">Comment Trigger</option>
+                    <option value="ad_trigger">Ad Trigger</option>
+                </select>
+                <button class="glass-btn primary" onclick="addKeywords()">Add Bulk</button>
+            </div>
+        </div>
+        <div class="glass panel" style="flex-grow: 1; overflow-y: auto;">
+            <div id="kw-list">Loading...</div>
+        </div>
+    </div>
+    <script>
+        const colors = {"whitelist": "#10b981", "blacklist": "#ef4444", "comment_trigger": "#4da6ff", "ad_trigger": "#f59e0b"};
+        async function loadKeywords() {
+            const res = await fetch('/api/keywords');
+            const data = await res.json();
+            const list = document.getElementById('kw-list');
+            list.innerHTML = "";
+            data.forEach(k => {
+                const c = colors[k.type] || "#fff";
+                list.innerHTML += `<div class="kw-card"><span style="font-size:14px; font-weight:bold;">${k.word}</span><div style="display: flex; align-items: center; gap: 15px;"><span class="tag-badge" style="color:${c}; background:${c}22;">${k.type.replace('_', ' ').toUpperCase()}</span><span style="color: #ef4444; cursor: pointer; font-size: 16px; font-weight: bold;" onclick="deleteKeyword('${k.word}')">✕</span></div></div>`;
+            });
+        }
+        async function addKeywords() {
+            const words = document.getElementById('kw-input').value;
+            const type = document.getElementById('kw-type').value;
+            if (!words) return;
+            await fetch('/api/keywords', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ words: words, kw_type: type }) });
+            document.getElementById('kw-input').value = "";
+            loadKeywords();
+        }
+        async function deleteKeyword(word) { await fetch(`/api/keywords/${word}`, { method: 'DELETE' }); loadKeywords(); }
+        loadKeywords();
+    </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spider V8 - Web Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <div id="sidebar-nav" class="glass">
+        <h2 style="color: #4da6ff; text-align: center; margin-bottom: 30px;">🕷️ SPIDER V8<br><span style="font-size: 12px; color: #a8b8d0;">Web Edition</span></h2>
+        <a href="dashboard.html" class="nav-item active">📊 Dashboard</a>
+        <a href="keywords.html" class="nav-item">🔑 Keywords</a>
+        <a href="sniper.html" class="nav-item">🎯 Google Sniper</a>
+        <a href="settings.html" class="nav-item">⚙️ Settings</a>
+        <a href="index.html" class="nav-item">🔗 Graph AI View</a>
+        <a href="wizard.html" class="nav-item" style="color: #a78bfa; font-weight: bold; margin-top: 20px;">🪄 Smart Wizard</a>
+    </div>
+    <div id="main-content">
+        <div class="header-row">
+            <h1>Dashboard</h1>
+            <div class="controls">
+                <button id="btn-start" class="glass-btn primary">▶ Start Spiders</button>
+                <button id="btn-stop" class="glass-btn secondary" disabled>■ Stop All</button>
+            </div>
+        </div>
+        <div class="stats-grid">
+            <div class="glass panel" style="grid-column: span 2; display: flex; flex-direction: column;">
+                <h3>Task Manager (Profiles)</h3>
+                <div id="task-manager" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                    <span style="color:#a8b8d0;">Loading profiles...</span>
+                </div>
+            </div>
+            <div class="glass panel">
+                <h3 style="color: #a78bfa;">Database Health</h3>
+                <div class="stat-row"><span>DB Size:</span> <span id="stat-db-size" class="highlight">0 MB</span></div>
+                <div class="stat-row"><span>Total Channels:</span> <span id="stat-total">0</span></div>
+                <div class="stat-row" style="align-items: center;">
+                    <span>AI Tagged:</span> 
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="stat-tagged" style="color: #10b981; font-weight: bold;">0</span>
+                        <button id="btn-run-tagger" class="glass-btn outline" style="padding: 2px 8px; font-size: 11px; border-color: #a78bfa; color: #a78bfa; border-radius: 5px; cursor: pointer;">🪄 Auto-Tag</button>
+                    </div>
+                </div>
+                <div class="stat-row"><span>Graph Links:</span> <span id="stat-links" style="color: #f59e0b;">0</span></div>
+            </div>
+            <div class="glass panel">
+                <h3>Session Statistics</h3>
+                <div class="stat-row"><span>Approved:</span> <span id="stat-appr" style="color: #10b981;">0</span></div>
+                <div class="stat-row"><span>Rejected:</span> <span id="stat-rej" style="color: #ef4444;">0</span></div>
+                <div class="stat-row"><span>Queue:</span> <span id="stat-queue">0</span></div>
+                <div class="stat-row"><span>Leads Found:</span> <span id="stat-leads" style="color: #4da6ff; font-weight: bold;">0</span></div>
+            </div>
+        </div>
+        <div class="glass panel" style="margin-top: 20px; flex-grow: 1; display: flex; flex-direction: column;">
+            <h3>Live Activity Log</h3>
+            <div id="live-logs" class="terminal-log">Waiting to start...</div>
+        </div>
+    </div>
+    <script src="dashboard.js"></script>
+</body>
+</html>
